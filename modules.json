@@ -1,6 +1,6 @@
 {
-    "name": "nf-core/hic",
-    "homePage": "https://github.com/nf-core/hic",
+    "name": "dhslab/nf-core-hic",
+    "homePage": "https://github.com/dhslab/nf-core-hic",
     "repos": {
         "https://github.com/nf-core/modules.git": {
             "modules": {

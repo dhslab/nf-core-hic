@@ -1,5 +1,5 @@
 //
-// This file holds several functions specific to the main.nf workflow in the nf-core/hic pipeline
+// This file holds several functions specific to the main.nf workflow in the dhslab/nf-core-hic pipeline
 //
 
 class WorkflowMain {

@@ -1,4 +1,4 @@
-# nf-core/hic: Output
+# dhslab/nf-core-hic: Output
 
 ## Introduction
 

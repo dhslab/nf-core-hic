@@ -1,4 +1,4 @@
-# nf-core/hic: Citations
+# dhslab/nf-core-hic: Citations
 
 ## [nf-core](https://pubmed.ncbi.nlm.nih.gov/32055031/)
 

@@ -1,5 +1,5 @@
 //
-// This file holds several functions specific to the workflow/hic.nf in the nf-core/hic pipeline
+// This file holds several functions specific to the workflow/hic.nf in the dhslab/nf-core-hic pipeline
 //
 
 import groovy.text.SimpleTemplateEngine

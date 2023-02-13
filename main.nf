@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    nf-core/hic
+    dhslab/nf-core-hic
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Github : https://github.com/nf-core/hic
+    Github : https://github.com/dhslab/nf-core-hic
 
     Website: https://nf-co.re/hic
     Slack  : https://nfcore.slack.com/channels/hic
@@ -37,11 +37,11 @@ WorkflowMain.initialise(workflow, params, log)
 include { HIC } from './workflows/hic'
 
 //
-// WORKFLOW: Run main nf-core/hic analysis pipeline
+// WORKFLOW: Run main dhslab/nf-core-hic analysis pipeline
 //
-workflow NFCORE_HIC {
-    HIC ()
-}
+// workflow NFCORE_HIC {
+//     HIC ()
+// }
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -54,7 +54,8 @@ workflow NFCORE_HIC {
 // See: https://github.com/nf-core/rnaseq/issues/619
 //
 workflow {
-    NFCORE_HIC ()
+    HIC ()
+    emit: HIC.out.view()
 }
 
 /*
