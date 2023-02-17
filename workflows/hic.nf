@@ -1,43 +1,3 @@
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    VALIDATE INPUTS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
-
-// Validate input parameters
-WorkflowHic.initialise(params, log)
-
-// TODO nf-core: Add all file path parameters for the pipeline to the list below
-// Check input path parameters to see if they exist
-def checkPathParamList = [ params.input, params.multiqc_config, params.fasta ]
-for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
-
-// Check mandatory parameters
-if (params.input) { ch_input = file(params.input) } else { exit 1, 'Input samplesheet not specified!' }
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    CONFIG FILES
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-ch_multiqc_config          = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-ch_multiqc_custom_config   = params.multiqc_config ? Channel.fromPath( params.multiqc_config, checkIfExists: true ) : Channel.empty()
-ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
-ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT LOCAL MODULES/SUBWORKFLOWS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-//
-// SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
-//
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -45,13 +5,11 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-//
-// MODULE: Installed directly from nf-core/modules
-//
-// include { FASTQC                      } from '../modules/nf-core/fastqc/main'
-// include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
-// include { COMBINELANES                            } from '../modules/local/COMBINELANES.nf'
-include { CUSTOM_DUMPSOFTWAREVERSIONS    } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { MAKEPAIRS            } from '../subworkflows/local/MAKEPAIRS.nf'
+include { MERGECRAMS           } from '../modules/local/MERGECRAMS.nf'
+// include { MAKEBIGWIG           } from '../modules/local/MAKEBIGWIG.nf'
+include { MERGEPAIRS           } from '../modules/local/MERGEPAIRS.nf'
+include { PAIRS2MCOOL          } from '../modules/local/PAIRS2MCOOL.nf'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -59,64 +17,66 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS    } from '../modules/nf-core/custom/dumps
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-// Info required for completion email and summary
-def multiqc_report = []
+
 
 workflow HIC {
+    MAKEPAIRS()
 
-    ch_versions = Channel.empty()
+    ch_versions = MAKEPAIRS.out.ch_versions
 
     //
-    // SUBWORKFLOW: Read in samplesheet, validate and stage input files
+    // CHANNEL: Channel operation to mix all crams per sample in one channel
     //
-    INPUT_CHECK (
-        ch_input
+    MAKEPAIRS.out.pairs_cram
+    .map { meta, cram, crai -> [[sample: meta.sample] , cram] }
+    .groupTuple(by: 0)
+    .set { ch_cram_per_sample }
+
+    //
+    // MODULE: Merge all crams per sample
+    //
+    MERGECRAMS (
+        ch_cram_per_sample,
+        file(params.fasta)
     )
-    ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
+    ch_versions = ch_versions.mix(MERGECRAMS.out.versions)
 
     //
-    // MODULE: Combine fastqs for same library and different lanes
+    // MODULE: Make BigWig file from merged cram file
     //
-    // COMBINELANES (
-
+    // MAKEBIGWIG (
+    //     MERGECRAMS.out.cram_crai,
+    //     file(params.fasta)
     // )
-    // ch_versions = ch_versions.mix(COMBINELANES.out.versions)
+    // ch_versions = ch_versions.mix(MAKEBIGWIG.out.versions)
 
-    // //
-    // // MODULE: Run FastQC
-    // //
-    // FASTQC (
-    //     INPUT_CHECK.out.reads
-    // )
-    // ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    //
+    // CHANNEL: Channel operation to mix all .pairs files per sample in one channel
+    //
+    MAKEPAIRS.out.pairs
+    .map { meta, pairs -> [[sample: meta.sample] , pairs] }
+    .groupTuple(by: 0)
+    .set { ch_pairs_per_sample }
 
-    // CUSTOM_DUMPSOFTWAREVERSIONS (
-    //     ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    // )
 
-    // //
-    // // MODULE: MultiQC
-    // //
-    // workflow_summary    = WorkflowHic.paramsSummaryMultiqc(workflow, summary_params)
-    // ch_workflow_summary = Channel.value(workflow_summary)
+    //
+    // MODULE: Merge all .pairs files per sample
+    //
+    MERGEPAIRS (
+        ch_pairs_per_sample
+    )
+    ch_versions = ch_versions.mix(MERGEPAIRS.out.versions)
 
-    // methods_description    = WorkflowHic.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description)
-    // ch_methods_description = Channel.value(methods_description)
+    //
+    // MODULE: make mcool file from pairs file
+    //
+    PAIRS2MCOOL (
+        MERGEPAIRS.out.pairs,
+        file(params.chromsizes)
+    )
+    ch_versions = ch_versions.mix(PAIRS2MCOOL.out.versions)
 
-    // ch_multiqc_files = Channel.empty()
-    // ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    // ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
-    // ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    // ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
-
-    // MULTIQC (
-    //     ch_multiqc_files.collect(),
-    //     ch_multiqc_config.toList(),
-    //     ch_multiqc_custom_config.toList(),
-    //     ch_multiqc_logo.toList()
-    // )
-    // multiqc_report = MULTIQC.out.report.toList()
-    emit: ch_input.meta
+    emit: ch_pairs_per_sample
 }
 
 /*
