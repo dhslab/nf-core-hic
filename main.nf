@@ -34,7 +34,10 @@ WorkflowMain.initialise(workflow, params, log)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { HIC } from './workflows/hic'
+include { HIC     } from './workflows/HIC.nf'
+include { CAPTURE } from './workflows/CAPTURE.nf'
+include { QC      } from './workflows/QC.nf'
+
 
 //
 // WORKFLOW: Run main dhslab/nf-core-hic analysis pipeline
@@ -55,7 +58,32 @@ include { HIC } from './workflows/hic'
 //
 workflow {
     HIC ()
-    emit: HIC.out.view()
+    // emit: HIC.out.view()
+    
+}
+
+workflow qc {
+    QC ()
+}
+
+workflow capture {
+    CAPTURE ()
+}
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    COMPLETION EMAIL AND SUMMARY
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+workflow.onComplete {
+    if (params.email || params.email_on_fail) {
+        NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, multiqc_report)
+    }
+    NfcoreTemplate.summary(workflow, params, log)
+    if (params.hook_url) {
+        NfcoreTemplate.IM_notification(workflow, params, summary_params, projectDir, log)
+    }
 }
 
 /*

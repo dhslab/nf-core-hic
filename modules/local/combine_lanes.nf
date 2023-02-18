@@ -1,4 +1,4 @@
-process COMBINELANES {
+process combine_lanes {
     tag "$meta.library"
     label 'process_medium'
 

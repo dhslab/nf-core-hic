@@ -1,4 +1,4 @@
-process FASTQ2PAIRS {
+process fastq2pairs {
     tag "$meta.library"
     label 'process_high'
     label 'per_library'

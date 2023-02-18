@@ -1,7 +1,7 @@
-process MERGECRAMS {
-    tag "$meta.sample"
+process sort_bam {
+    tag "$meta.library"
     label 'process_high'
-    label 'per_sample'
+    label 'per_library'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'ghcr.io/dhslab/docker-hic' :
@@ -9,16 +9,17 @@ process MERGECRAMS {
 
     input:
 
-        tuple val(meta), path (crams)
+        tuple val(meta), path (bam)
         path (reference_fasta) // genome fasta
 
     output:
-        tuple val(meta), path ("${meta.sample}.pairs.cram") , path ("${meta.sample}.pairs.cram.crai"), emit: cram_crai
-        path ("versions.yml")                         , emit: versions
+        tuple val(meta), path ("${meta.library}.cram") , path ("${meta.library}.cram.crai"), emit: cram_crai
+        path ("versions.yml")                          , emit: versions
 
     script:
         """
-        samtools merge -@ ${task.cpus} --reference ${reference_fasta} --write-index -o ${meta.sample}.pairs.cram##idx##${meta.sample}.pairs.cram.crai ${crams}
+
+        samtools sort -@ ${task.cpus} --reference ${reference_fasta} -o ${meta.library}.cram ${bam} && samtools index -@ ${task.cpus} ${meta.library}.cram
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

@@ -1,4 +1,4 @@
-process PAIRS2MCOOL {
+process pairs2mcool {
     tag "$meta.sample"
     label 'process_high'
     label 'per_sample'
@@ -18,7 +18,7 @@ process PAIRS2MCOOL {
 
     script:
         """
-        MAPQ_LIST="1 30"
+        MAPQ_LIST="${params.mcool_mapq_threshold}"
         for MAPQ in \$MAPQ_LIST; do
             bgzip -cd -@ ${task.cpus} ${pairs} | pairtools select "(mapq1>=\${MAPQ}) and (mapq2>=\${MAPQ})" | \\
                 cooler cload pairs -c1 2 -p1 3 -c2 4 -p2 5 --assembly ${params.genome} ${chromsizes}:${params.min_res} - ${meta.sample}.mapq_\${MAPQ}.cool && \\

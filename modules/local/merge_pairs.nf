@@ -1,4 +1,4 @@
-process MERGEPAIRS {
+process merge_pairs {
     tag "$meta.sample"
     label 'process_high'
     label 'per_sample'

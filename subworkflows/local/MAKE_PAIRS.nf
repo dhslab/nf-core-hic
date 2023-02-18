@@ -37,7 +37,7 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { INPUT_CHECK } from './input_check'
+include { INPUT_CHECK } from './INPUT_CHECK'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -50,9 +50,9 @@ include { INPUT_CHECK } from './input_check'
 //
 // include { FASTQC                      } from '../../modules/nf-core/fastqc/main'
 // include { MULTIQC                     } from '../../modules/nf-core/multiqc/main'
-include { COMBINELANES                   } from '../../modules/local/COMBINELANES.nf'
-include { FASTQ2PAIRS                    } from '../../modules/local/FASTQ2PAIRS.nf'
-include { SORTBAM                        } from '../../modules/local/SORTBAM.nf'
+include { combine_lanes                   } from '../../modules/local/combine_lanes.nf'
+include { fastq2pairs                    } from '../../modules/local/fastq2pairs.nf'
+include { sort_bam                        } from '../../modules/local/sort_bam.nf'
 include { CUSTOM_DUMPSOFTWAREVERSIONS    } from '../../modules/nf-core/custom/dumpsoftwareversions/main'
 
 /*
@@ -64,7 +64,7 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS    } from '../../modules/nf-core/custom/du
 // Info required for completion email and summary
 def multiqc_report = []
 
-workflow MAKEPAIRS {
+workflow MAKE_PAIRS {
 
     ch_versions = Channel.empty()
 
@@ -97,36 +97,36 @@ workflow MAKEPAIRS {
     //
     // MODULE: Combine fastqs for same library and different lanes
     //
-    COMBINELANES (
+    combine_lanes (
         ch_fastq
     )
 
     //
     // MODULE: Convert Fastq to .pairs files
     //
-    FASTQ2PAIRS (
-        COMBINELANES.out.fastq,
+    fastq2pairs (
+        combine_lanes.out.fastq,
         file(params.bwa_index + '.*'), // channel to stage all bwa index files
         file(params.fasta), // for genome fasta
         file(params.chromsizes)
 
     )
-    ch_versions = ch_versions.mix(FASTQ2PAIRS.out.versions)
+    ch_versions = ch_versions.mix(fastq2pairs.out.versions)
 
     //
     // MODULE: Sort mapping bam and convert it to indexed cram
     //
-    SORTBAM (
-        FASTQ2PAIRS.out.bam,
+    sort_bam (
+        fastq2pairs.out.bam,
         file(params.fasta)
     )
-    ch_versions = ch_versions.mix(SORTBAM.out.versions)
+    ch_versions = ch_versions.mix(sort_bam.out.versions)
 
     emit:
-        aligned_bam     = FASTQ2PAIRS.out.bam
-        aligned_cram    = SORTBAM.out.cram_crai
-        pairs           = FASTQ2PAIRS.out.pairs
-        pairs_cram      = FASTQ2PAIRS.out.cram_crai
+        aligned_bam     = fastq2pairs.out.bam
+        pairs           = fastq2pairs.out.pairs
+        pairs_cram      = fastq2pairs.out.cram_crai
+        dedup_stats      = fastq2pairs.out.stats
         ch_versions
 
 }
