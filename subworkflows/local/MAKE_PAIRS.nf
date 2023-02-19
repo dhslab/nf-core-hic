@@ -61,9 +61,6 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS    } from '../../modules/nf-core/custom/du
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-// Info required for completion email and summary
-def multiqc_report = []
-
 workflow MAKE_PAIRS {
 
     ch_versions = Channel.empty()

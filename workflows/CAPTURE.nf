@@ -1,3 +1,16 @@
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    VALIDATE Baits Bed
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+
+// Check bait bed parameter is provided
+def checkPathParamList = [ params.baits_bed ]
+for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
+
+// Check bait bed path if it exist
+if (params.baits_bed) { ch_baits_bed = file(params.baits_bed) } else { exit 1, 'Baits Bed file is not specified!' }
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -32,7 +45,7 @@ workflow CAPTURE {
     capture_qc (
         ch_cram_stats,
         file(params.fasta),
-        file(params.baits_bed)
+        ch_baits_bed
     )
     ch_versions = ch_versions.mix(capture_qc.out.versions)
 
