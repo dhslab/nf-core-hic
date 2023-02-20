@@ -1,92 +1,184 @@
-# ![dhslab/nf-core-hic](docs/images/nf-core-hic_logo_light.png#gh-light-mode-only) ![dhslab/nf-core-hic](docs/images/nf-core-hic_logo_dark.png#gh-dark-mode-only)
+# hic
+## Pipeline for Hi-C/Capture-C data analysis
 
-[![AWS CI](https://img.shields.io/badge/CI%20tests-full%20size-FF9900?labelColor=000000&logo=Amazon%20AWS)](https://nf-co.re/hic/results)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.XXXXXXX)
 
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A522.10.1-23aa62.svg)](https://www.nextflow.io/)
-[![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
-[![Launch on Nextflow Tower](https://img.shields.io/badge/Launch%20%F0%9F%9A%80-Nextflow%20Tower-%234256e7)](https://tower.nf/launch?pipeline=https://github.com/dhslab/nf-core-hic)
 
-[![Get help on Slack](http://img.shields.io/badge/slack-nf--core%20%23hic-4A154B?labelColor=000000&logo=slack)](https://nfcore.slack.com/channels/hic)[![Follow on Twitter](http://img.shields.io/badge/twitter-%40nf__core-1DA1F2?labelColor=000000&logo=twitter)](https://twitter.com/nf_core)[![Watch on YouTube](http://img.shields.io/badge/youtube-nf--core-FF0000?labelColor=000000&logo=youtube)](https://www.youtube.com/c/nf-core)
 
 ## Introduction
 
 <!-- TODO nf-core: Write a 1-2 sentence summary of what data the pipeline is for and what it does -->
 
-**dhslab/nf-core-hic** is a bioinformatics best-practice analysis pipeline for Pipeline for Hi-C data analysis.
+**nf-core-hic** is a bioinformatics best-practice analysis pipeline for Hi-C/Capture-C data analysis.
 
-The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules) in order to make them available to all nf-core pipelines, and to everyone within the Nextflow community!
+The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible.
 
 <!-- TODO nf-core: Add full-sized test dataset and amend the paragraph below if applicable -->
 
-On release, automated continuous integration tests run the pipeline on a full-sized dataset on the AWS cloud infrastructure. This ensures that the pipeline runs on AWS, has sensible resource allocation defaults set to run on real-world datasets, and permits the persistent storage of results to benchmark between pipeline releases and other analysis sources.The results obtained from the full-sized test can be viewed on the [nf-core website](https://nf-co.re/hic/results).
-
-## Pipeline summary
+## Workflow Summary
+### 1) Hi-C Workflow Summary (default)
 
 <!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
 
-1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+1. **fastq2pair (per library)**:
+    1. **Preprocessing** ([`fastp`](https://github.com/OpenGene/fastp)) >> `library.html` & `library.json`
+    1. **Alignment** ([`bwa`](https://bio-bwa.sourceforge.net/bwa.shtml)) >> `library.cram`/`library.cram.crai`
+    1. **Extract ligation junctions** ([`pairtools`](https://pairtools.readthedocs.io/en/latest/))
+    1. **Remove PCR/optical duplicates** ([`pairtools`](https://pairtools.readthedocs.io/en/latest/)) >> `library.pairs.gz` & `library.dedup.stats.txt`
+    1. **Make pairs cram file** ([`pairtools`](https://pairtools.readthedocs.io/en/latest/) & [`samtools`](http://www.htslib.org/doc/samtools.html))  >> `library.pairs.cram`/`library.pairs.cram.crai`
+    - These steps are based on this [Dovetail tutorial](https://micro-c.readthedocs.io/en/latest/fastq_to_bam.html). Check the link for more details
+1. **Merge all** `library.pairs.gz` & `library.pairs.cram` for libraries per individual sample >> `sample.pairs.gz` & `sample.pairs.cram`
+1. **Make `.mcool` file** ([`cooler`](https://cooler.readthedocs.io/en/latest/quickstart.html)) >> `sample.mcool`
+
+### 2) Capture-C Workflow Summary
+**- Initial steps Similar to Hi-C Workflow (steps 1-3)** \
+4\. **QC for Capture** (Baits regions coverage) \
+5\. **Make bam** file compatible with [CHiCAGO algorithm](https://bioconductor.org/packages/release/bioc/html/Chicago.html) ([`samtools`](http://www.htslib.org/doc/samtools.html))
+
+### 3) QC Workflow Summary
+- This workflow is intended to check **library Complexity** from shallow-depth sequencing for QC before doing deep sequencing. it is based on this [Dovetail tutorial](https://micro-c.readthedocs.io/en/latest/library_qc.html#library-complexity).
+1. **fastq2pair (per library)**: Same steps as in HiC and Capture-C workflows.
+2. **Estimate library complexity** ([`preseq`](https://github.com/smithlabcode/preseq)) >> `sample.preseq.txt`. For interpretation of this results refer to [Dovetail tutorial](https://micro-c.readthedocs.io/en/latest/library_qc.html#library-complexity)
+
 
 ## Quick Start
 
 1. Install [`Nextflow`](https://www.nextflow.io/docs/latest/getstarted.html#installation) (`>=22.10.1`)
 
-2. Install any of [`Docker`](https://docs.docker.com/engine/installation/), [`Singularity`](https://www.sylabs.io/guides/3.0/user-guide/) (you can follow [this tutorial](https://singularity-tutorial.github.io/01-installation/)), [`Podman`](https://podman.io/), [`Shifter`](https://nersc.gitlab.io/development/shifter/how-to-use/) or [`Charliecloud`](https://hpc.github.io/charliecloud/) for full pipeline reproducibility _(you can use [`Conda`](https://conda.io/miniconda.html) both to install Nextflow itself and also to manage software within pipelines. Please only use it within pipelines as a last resort; see [docs](https://nf-co.re/usage/configuration#basic-configuration-profiles))_.
+2. Install any of [`Docker`](https://docs.docker.com/engine/installation/), [`Singularity`](https://www.sylabs.io/guides/3.0/user-guide/) (you can follow [this tutorial](https://singularity-tutorial.github.io/01-installation/)), [`Podman`](https://podman.io/), [`Shifter`](https://nersc.gitlab.io/development/shifter/how-to-use/) or [`Charliecloud`](https://hpc.github.io/charliecloud/) for full pipeline reproducibility _(**this pipeline can NOT be run with conda**))_. This requirement is not needed for running the pipeline in WashU RIS cluster.
+
 
 3. Download the pipeline and test it on a minimal dataset with a single command:
 
    ```bash
-   nextflow run dhslab/nf-core-hic -profile test,YOURPROFILE --outdir <OUTDIR>
+   nextflow run dhslab/nf-core-hic -profile test,YOURPROFILE(S) --outdir <OUTDIR>
    ```
 
-   Note that some form of configuration will be needed so that Nextflow knows how to fetch the required software. This is usually done in the form of a config profile (`YOURPROFILE` in the example command above). You can chain multiple config profiles in a comma-separated string.
-
-   > - The pipeline comes with config profiles called `docker`, `singularity`, `podman`, `shifter`, `charliecloud` and `conda` which instruct the pipeline to use the named tool for software management. For example, `-profile test,docker`.
-   > - Please check [nf-core/configs](https://github.com/nf-core/configs#documentation) to see if a custom config file to run nf-core pipelines already exists for your Institute. If so, you can simply use `-profile <institute>` in your command. This will enable either `docker` or `singularity` and set the appropriate execution settings for your local compute environment.
-   > - If you are using `singularity`, please use the [`nf-core download`](https://nf-co.re/tools/#downloading-pipelines-for-offline-use) command to download images first, before running the pipeline. Setting the [`NXF_SINGULARITY_CACHEDIR` or `singularity.cacheDir`](https://www.nextflow.io/docs/latest/singularity.html?#singularity-docker-hub) Nextflow options enables you to store and re-use the images from a central location for future pipeline runs.
-   > - If you are using `conda`, it is highly recommended to use the [`NXF_CONDA_CACHEDIR` or `conda.cacheDir`](https://www.nextflow.io/docs/latest/conda.html) settings to store the environments in a central location for future pipeline runs.
 
 4. Start running your own analysis!
 
    <!-- TODO nf-core: Update the example "typical command" below used to run the pipeline -->
 
    ```bash
-   nextflow run dhslab/nf-core-hic --input samplesheet.csv --outdir <OUTDIR> --genome GRCh37 -profile <docker/singularity/podman/shifter/charliecloud/conda/institute>
+   nextflow run dhslab/nf-core-hic --input samplesheet.csv --fasta <FASTA> --bwa_index <INDEX_PREFIX> --chromsizes <CHROMSIZES> --genome <GENOME_NAME> -profile <docker/singularity/podman/shifter/charliecloud/conda/institute> --outdir <OUTDIR>
    ```
 
-## Documentation
+## Usage
+### Required parameters:
+1. **Input** `samplesheet.cvs` which provides directory paths for `fastq1`, `fastq2` raw reads and their metadata (`id`, `sample`, `library`, `flowcell`). this can be provided either in a configuration file or as `--input path/to/samplesheet.cvs` command line parameter. Example sheet located in `assets/samplesheet.csv`.
+2. **Genome fasta**, either in a configuration file or as `--fasta path/to/genome.fasta` command line parameter.
+3. **BWA index**, either in a configuration file or as `--bwa_index path/to/bwa_index/with_prefix` command line parameter. It is important to provide the full path including **index prefix**.
+4. **Chromosome sizes file**, either in a configuration file or as `--chromsizes path/to/chromsizes` command line parameter.
+2. **Genome name (eg. hg38)**, either in a configuration file or as `--fasta path/to/genome.fasta` command line parameter.
 
-The dhslab/nf-core-hic pipeline comes with documentation about the pipeline [usage](https://nf-co.re/hic/usage), [parameters](https://nf-co.re/hic/parameters) and [output](https://nf-co.re/hic/output).
+### Tools specific parameters:
+The following parameters are set to the shown default values, but should be modified when required in command line, or in user-provided config files:
+#### Preprocessing options for fastp
 
-## Credits
 
-dhslab/nf-core-hic was originally written by Mohamed Mahgoub.
+| Parameter | Description | Type | Default |
+|-----------|-----------|-----------|-----------|
+| `trim_qual` | fastp `-q` option for the quality value that a base is qualified | `integer` | 15 |
 
-We thank the following people for their extensive assistance in the development of this pipeline:
+#### pairtools options
 
-<!-- TODO nf-core: If applicable, make list of people who have also contributed -->
+| Parameter | Description | Type | Default |
+|-----------|-----------|-----------|-----------|
+| `parsemq` | pairtools parse `--min-mapq` option for the minimal MAPQ score to consider a read as uniquely mapped | `integer` | 1 |
+| `parse_walks_policy` | pairtools parse `--walks-policy` option. See pairtools documentation for details | `string` | 5unique |
+| `parse_max_gap` | pairtools parse `--max-inter-align-gap` option. See pairtools documentation for details | `integer` | 30 |
+| `max_mismatch` | pairtools dedup `--max-mismatch` option. Pairs with both sides mapped within this distance (bp) from each other are considered duplicates | `integer` | 1 |
 
-## Contributions and Support
+#### mcool file options
 
-If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
+| Parameter | Description | Type | Default |
+|-----------|-----------|-----------|-----------|
+| `resolutions` | cooler zoomify `--resolutions` option: Comma-separated list of target resolutions | `string` | 1000000,500000,250000,100000,50000,20000,10000,5000 |
+| `min_res` | Minimum resolution for the mcool file (from the resolutions list provided) | `integer` | 5000 |
+| `mcool_mapq_threshold` | Minimum resolution for the mcool file (from the resolutions list provided) | `string` | 1 30 |
 
-For further information or help, don't hesitate to get in touch on the [Slack `#hic` channel](https://nfcore.slack.com/channels/hic) (you can join with [this invite](https://nf-co.re/join/slack)).
+#### Capture-C options
 
-## Citations
+| Parameter | Description | Type | Default |
+|-----------|-----------|-----------|-----------|
+| `baits_bed` | Bed file for regions targeted  by Capture baits. Required only for Capture-C workflow | `string` | None |
 
-<!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
-<!-- If you use  dhslab/nf-core-hic for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
 
-<!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->
+### Running a test
 
-An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
 
-You can cite the `nf-core` publication as follows:
+### **1) Directly from GitHub:**
+```bash
+NXF_HOME=${PWD}/.nextflow LSF_DOCKER_VOLUMES="/storage1/fs1/dspencer/Active:/storage1/fs1/dspencer/Active $HOME:$HOME" bsub -g /dspencer/nextflow -G compute-dspencer -q dspencer -e nextflow_launcher.err -o nextflow_launcher.log -We 2:00 -n 2 -M 12GB -R "select[mem>=16000] span[hosts=1] rusage[mem=16000]" -a "docker(ghcr.io/dhslab/docker-nextflow)" nextflow run dhslab/nf-core-hic -r dev -profile test,ris,dhslab --outdir results
+```
+**Notice that three profiles are used here:**
+1. `test`-> to provide `input` and `fasta` paths for the test run
+2. `ris`-> to set **general** configuration for RIS LSF cluster
+3. `dhslab`-> to set **lab-specific** cluster configuration
 
-> **The nf-core framework for community-curated bioinformatics pipelines.**
->
-> Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.
->
-> _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://dx.doi.org/10.1038/s41587-020-0439-x).
+### **2) Alternatively, clone the repository and run the pipeline from local directory:**
+```bash
+git clone https://github.com/dhslab/nf-core-hic.git
+cd nf-core-hic/
+chmod +x bin/*
+LSF_DOCKER_VOLUMES="/storage1/fs1/dspencer/Active:/storage1/fs1/dspencer/Active $HOME:$HOME" bsub -g /dspencer/nextflow -G compute-dspencer -q dspencer -e nextflow_launcher.err -o nextflow_launcher.log -We 2:00 -n 2 -M 12GB -R "select[mem>=16000] span[hosts=1] rusage[mem=16000]" -a "docker(ghcr.io/dhslab/docker-nextflow)" "NXF_HOME=${PWD}/.nextflow ; nextflow run main.nf -profile test,ris,dhslab --outdir results"
+```
+### **Directory tree for test run output (default workflow):**
+
+```
+.
+├── pipeline_info
+│   ├── execution_report_2023-02-17_23-57-34.html
+│   ├── execution_timeline_2023-02-17_23-57-34.html
+│   ├── execution_trace_2023-02-17_23-57-34.txt
+│   ├── pipeline_dag_2023-02-17_23-57-34.html
+│   ├── samplesheet.valid.csv
+│   └── software_versions.yml
+└── samples
+    └── TEST
+        ├── fastq2pairs
+        │   ├── TESTA
+        │   │   ├── TESTA.cram
+        │   │   ├── TESTA.cram.crai
+        │   │   ├── TESTA.dedup.stats.txt
+        │   │   ├── TESTA.fastp.html
+        │   │   ├── TESTA.fastp.json
+        │   │   ├── TESTA.pairs.cram
+        │   │   ├── TESTA.pairs.cram.crai
+        │   │   └── TESTA.pairs.gz
+        │   ├── TESTB
+        │   │   ├── TESTB.cram
+        │   │   ├── TESTB.cram.crai
+        │   │   ├── TESTB.dedup.stats.txt
+        │   │   ├── TESTB.fastp.html
+        │   │   ├── TESTB.fastp.json
+        │   │   ├── TESTB.pairs.cram
+        │   │   ├── TESTB.pairs.cram.crai
+        │   │   └── TESTB.pairs.gz
+        │   ├── TESTC
+        │   │   ├── TESTC.cram
+        │   │   ├── TESTC.cram.crai
+        │   │   ├── TESTC.dedup.stats.txt
+        │   │   ├── TESTC.fastp.html
+        │   │   ├── TESTC.fastp.json
+        │   │   ├── TESTC.pairs.cram
+        │   │   ├── TESTC.pairs.cram.crai
+        │   │   └── TESTC.pairs.gz
+        │   └── merged
+        │       ├── TEST.pairs.cram
+        │       ├── TEST.pairs.cram.crai
+        │       └── TEST.pairs.gz
+        └── mcool
+            ├── TEST.mapq_1.mcool
+            └── TEST.mapq_30.mcool
+
+
+```
+
+
+### Notes:
+- The pipeline is developed and optimized to be run in WashU RIS (LSF) HPC, but could be deployed in any [`HPC environment supported by Nextflow`](https://www.nextflow.io/docs/latest/executor.html).
+- The pipeline does NOT support conda because some of the tools used are not available as conda packages.
+- The Test workflow can be run on personal computer, but not adviced. It is recommdned to do the testing in environment with at least 16 GB memory. If the test workflow failed (espacially at **fastq2pair** step ), try re-run mith more allocated resources. Such errors are likely becasue of broken pipes due to maxed-out memory. The pipeline is desinged mith many pipe steps to avoid making large intermediatre files.
