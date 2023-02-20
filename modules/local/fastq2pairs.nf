@@ -2,6 +2,7 @@ process fastq2pairs {
     tag "$meta.library"
     label 'process_high'
     label 'per_library'
+    label 'hybrid_executor'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'ghcr.io/dhslab/docker-hic' :
