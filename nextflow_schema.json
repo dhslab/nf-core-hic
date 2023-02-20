@@ -34,11 +34,6 @@
                     "fa_icon": "fas fa-envelope",
                     "help_text": "Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits. If set in your user config file (`~/.nextflow/config`) then you don't need to specify this on the command line for every run.",
                     "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$"
-                },
-                "multiqc_title": {
-                    "type": "string",
-                    "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
-                    "fa_icon": "fas fa-file-signature"
                 }
             }
         },
@@ -63,6 +58,17 @@
                     "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.",
                     "fa_icon": "far fa-file-code"
                 },
+                "bwa_index": {
+                    "type": "string",
+                    "default": "None",
+                    "description": "Path to BWA index, including prefix.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "chromsizes": {
+                    "type": "string",
+                    "default": "None",
+                    "fa_icon": "far fa-file-code"
+                },
                 "igenomes_base": {
                     "type": "string",
                     "format": "directory-path",
@@ -78,7 +84,8 @@
                     "hidden": true,
                     "help_text": "Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`."
                 }
-            }
+            },
+            "required": ["fasta", "bwa_index"]
         },
         "institutional_config_options": {
             "title": "Institutional config options",
@@ -205,14 +212,6 @@
                     "fa_icon": "fas fa-remove-format",
                     "hidden": true
                 },
-                "max_multiqc_email_size": {
-                    "type": "string",
-                    "description": "File size limit when attaching MultiQC reports to summary emails.",
-                    "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
-                    "default": "25.MB",
-                    "fa_icon": "fas fa-file-upload",
-                    "hidden": true
-                },
                 "monochrome_logs": {
                     "type": "boolean",
                     "description": "Do not use coloured log outputs.",
@@ -225,23 +224,6 @@
                     "fa_icon": "fas fa-people-group",
                     "help_text": "Incoming hook URL for messaging service. Currently, MS Teams and Slack are supported.",
                     "hidden": true
-                },
-                "multiqc_config": {
-                    "type": "string",
-                    "description": "Custom config file to supply to MultiQC.",
-                    "fa_icon": "fas fa-cog",
-                    "hidden": true
-                },
-                "multiqc_logo": {
-                    "type": "string",
-                    "description": "Custom logo file to supply to MultiQC. File name must also be set in the MultiQC config file",
-                    "fa_icon": "fas fa-image",
-                    "hidden": true
-                },
-                "multiqc_methods_description": {
-                    "type": "string",
-                    "description": "Custom MultiQC yaml file containing HTML including a methods description.",
-                    "fa_icon": "fas fa-cog"
                 },
                 "tracedir": {
                     "type": "string",
@@ -265,6 +247,85 @@
                     "help_text": "By default, parameters set as _hidden_ in the schema are not shown on the command line when a user runs with `--help`. Specifying this option will tell the pipeline to show all parameters."
                 }
             }
+        },
+        "preprocessing_options_for_fastp": {
+            "title": "Preprocessing options for fastp",
+            "type": "object",
+            "description": "Options for reads preprocessing",
+            "default": "",
+            "properties": {
+                "trim_qual": {
+                    "type": "integer",
+                    "default": 15,
+                    "description": "fastp `-q` option for the quality value that a base is qualified"
+                }
+            },
+            "required": ["trim_qual"]
+        },
+        "pairtools_options": {
+            "title": "pairtools options",
+            "type": "object",
+            "description": "Options for pairtools analysis",
+            "default": "",
+            "properties": {
+                "parsemq": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "pairtools parse `--min-mapq` option for the minimal MAPQ score to consider a read as uniquely mapped"
+                },
+                "parse_walks_policy": {
+                    "type": "string",
+                    "default": "5unique",
+                    "description": "pairtools parse `--walks-policy` option. See pairtools documentation for details"
+                },
+                "parse_max_gap": {
+                    "type": "integer",
+                    "default": 30,
+                    "description": "pairtools parse `--max-inter-align-gap` option. See pairtools documentation for details"
+                },
+                "max_mismatch": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "pairtools dedup `--max-mismatch` option. Pairs with both sides mapped within this distance (bp) from each other are considered duplicates"
+                }
+            },
+            "required": ["parsemq", "parse_walks_policy", "parse_max_gap", "max_mismatch"]
+        },
+        "mcool_file_options": {
+            "title": "mcool file options",
+            "type": "object",
+            "description": "Options for mcool file",
+            "default": "",
+            "properties": {
+                "resolutions": {
+                    "type": "string",
+                    "default": "1000000,500000,250000,100000,50000,20000,10000,5000",
+                    "description": "cooler zoomify `--resolutions` option: Comma-separated list of target resolutions"
+                },
+                "min_res": {
+                    "type": "integer",
+                    "default": 5000,
+                    "description": "Minimum resolution for the mcool file (from the resolutions list provided)"
+                },
+                "mcool_mapq_threshold": {
+                    "type": "string",
+                    "default": "1 30",
+                    "description": "Minimum resolution for the mcool file (from the resolutions list provided)"
+                }
+            }
+        },
+        "capture_c_options": {
+            "title": "Capture-C options",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "baits_bed": {
+                    "type": "string",
+                    "default": "None",
+                    "description": "Bed file for regions targeted  by Capture baits. Required only for Capture-C workflow"
+                }
+            }
         }
     },
     "allOf": [
@@ -282,6 +343,18 @@
         },
         {
             "$ref": "#/definitions/generic_options"
+        },
+        {
+            "$ref": "#/definitions/preprocessing_options_for_fastp"
+        },
+        {
+            "$ref": "#/definitions/pairtools_options"
+        },
+        {
+            "$ref": "#/definitions/mcool_file_options"
+        },
+        {
+            "$ref": "#/definitions/capture_c_options"
         }
     ]
 }
