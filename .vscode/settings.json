@@ -6,7 +6,8 @@
         "markdown",
         "latex",
         "plaintext",
-        "nextflow"
+        "nextflow",
+        "shellscript"
     ],
     "spellright.parserByClass": {
         "nextflow": {

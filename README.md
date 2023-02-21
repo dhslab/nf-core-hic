@@ -11,14 +11,14 @@
 
 <!-- TODO nf-core: Write a 1-2 sentence summary of what data the pipeline is for and what it does -->
 
-**nf-core-hic** is a bioinformatics best-practice analysis pipeline for Hi-C/Capture-C data analysis.
+**nf-core-hic** is a bioinformatics best-practice analysis pipeline for Hi-C/Capture-C data analysis. This pipeline is optimal for large scale analysis in High Performance Computing Clusters (HPCs) and Cloud Computing environments (eg. AWS)
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible.
 
 <!-- TODO nf-core: Add full-sized test dataset and amend the paragraph below if applicable -->
 
 ## Workflow Summary
-### 1) Hi-C Workflow Summary (default)
+### 1) Hi-C Workflow (default)
 
 <!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
 
@@ -32,12 +32,12 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 1. **Merge all** `library.pairs.gz` & `library.pairs.cram` for libraries per individual sample >> `sample.pairs.gz` & `sample.pairs.cram`
 1. **Make `.mcool` file** ([`cooler`](https://cooler.readthedocs.io/en/latest/quickstart.html)) >> `sample.mcool`
 
-### 2) Capture-C Workflow Summary
+### 2) Capture-C Workflow
 **- Initial steps Similar to Hi-C Workflow (steps 1-3)** \
 4\. **QC for Capture** (Baits regions coverage) \
 5\. **Make bam** file compatible with [CHiCAGO algorithm](https://bioconductor.org/packages/release/bioc/html/Chicago.html) ([`samtools`](http://www.htslib.org/doc/samtools.html))
 
-### 3) QC Workflow Summary
+### 3) QC Workflow
 - This workflow is intended to check **library Complexity** from shallow-depth sequencing for QC before doing deep sequencing. it is based on this [Dovetail tutorial](https://micro-c.readthedocs.io/en/latest/library_qc.html#library-complexity).
 1. **fastq2pair (per library)**: Same steps as in HiC and Capture-C workflows.
 2. **Estimate library complexity** ([`preseq`](https://github.com/smithlabcode/preseq)) >> `sample.preseq.txt`. For interpretation of this results refer to [Dovetail tutorial](https://micro-c.readthedocs.io/en/latest/library_qc.html#library-complexity)
@@ -47,7 +47,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 
 1. Install [`Nextflow`](https://www.nextflow.io/docs/latest/getstarted.html#installation) (`>=22.10.1`)
 
-2. Install any of [`Docker`](https://docs.docker.com/engine/installation/), [`Singularity`](https://www.sylabs.io/guides/3.0/user-guide/) (you can follow [this tutorial](https://singularity-tutorial.github.io/01-installation/)), [`Podman`](https://podman.io/), [`Shifter`](https://nersc.gitlab.io/development/shifter/how-to-use/) or [`Charliecloud`](https://hpc.github.io/charliecloud/) for full pipeline reproducibility _(**this pipeline can NOT be run with conda**))_. This requirement is not needed for running the pipeline in WashU RIS cluster.
+2. Install any of [`Docker`](https://docs.docker.com/engine/installation/), [`Singularity`](https://www.sylabs.io/guides/3.0/user-guide/) (you can follow [this tutorial](https://singularity-tutorial.github.io/01-installation/)), [`Podman`](https://podman.io/), [`Shifter`](https://nersc.gitlab.io/development/shifter/how-to-use/) or [`Charliecloud`](https://hpc.github.io/charliecloud/) for full pipeline reproducibility _(**this pipeline can NOT be run with conda**))_. This requirement is not needed for running the pipeline in WashU RIS cluster. This pipeline is also successfully tested using Amazon Cloud Computing (AWS). For details on how to run nextflow pipelines in AWS refer to [nextflow documentation](https://www.nextflow.io/docs/latest/aws.html) and to [this excellent tutorial](https://staphb.org/resources/2020-04-29-nextflow_batch.html).
 
 
 3. Download the pipeline and test it on a minimal dataset with a single command:
@@ -144,25 +144,27 @@ The following parameters are set to the shown default values, but should be modi
 | `baits_bed` | Bed file for regions targeted  by Capture baits. Required only for Capture-C workflow | `string` | None |
 
 
-### Running a test
+## Example for running a test on WashU RIS HPC:
 
-
-### **1) Directly from GitHub:**
 ```bash
-NXF_HOME=${PWD}/.nextflow LSF_DOCKER_VOLUMES="/storage1/fs1/dspencer/Active:/storage1/fs1/dspencer/Active $HOME:$HOME" bsub -g /dspencer/nextflow -G compute-dspencer -q dspencer -e nextflow_launcher.err -o nextflow_launcher.log -We 2:00 -n 2 -M 12GB -R "select[mem>=16000] span[hosts=1] rusage[mem=16000]" -a "docker(ghcr.io/dhslab/docker-nextflow)" nextflow run dhslab/nf-core-hic -r dev -profile test,ris,dhslab --outdir results
+# Run default Hi-C workflow
+NXF_HOME=/scratch1/fs1/dspencer/.nextflow \
+LSF_DOCKER_VOLUMES="/storage1/fs1/dspencer/Active:/storage1/fs1/dspencer/Active /scratch1/fs1/dspencer:/scratch1/fs1/dspencer $HOME:$HOME" \
+bsub -g /dspencer/nextflow -G compute-dspencer -q dspencer \
+-e nextflow_launcher.err -o nextflow_launcher.log -We 2:00 -n 2 -M 12GB \
+-R "select[mem>=16000] span[hosts=1] rusage[mem=16000]" \
+-a "docker(ghcr.io/dhslab/docker-nextflow)" \
+nextflow run dhslab/nf-core-hic \
+-r dev \
+-profile dhslab,ris \
+-c /storage1/fs1/dspencer/Active/spencerlab/mohamed/github/nf-core-hic/conf/test_dhs.config \
+--outdir results
 ```
-**Notice that three profiles are used here:**
-1. `test`-> to provide `input` and `fasta` paths for the test run
-2. `ris`-> to set **general** configuration for RIS LSF cluster
-3. `dhslab`-> to set **lab-specific** cluster configuration
+**Notice the profiles which are used here:**
+1. **`dhslab`** -> to set **lab-specific** cluster/cloud configuration (by importing `conf/dhslab.config`, see `nextflow.config`)
+2. **`ris`** -> to set **general** configuration for RIS LSF cluster
+- any number of profiles/config-files can be used. Just consider how configuration priorities are set in nextflow as documented [here](https://www.nextflow.io/docs/latest/config.html)
 
-### **2) Alternatively, clone the repository and run the pipeline from local directory:**
-```bash
-git clone https://github.com/dhslab/nf-core-hic.git
-cd nf-core-hic/
-chmod +x bin/*
-LSF_DOCKER_VOLUMES="/storage1/fs1/dspencer/Active:/storage1/fs1/dspencer/Active $HOME:$HOME" bsub -g /dspencer/nextflow -G compute-dspencer -q dspencer -e nextflow_launcher.err -o nextflow_launcher.log -We 2:00 -n 2 -M 12GB -R "select[mem>=16000] span[hosts=1] rusage[mem=16000]" -a "docker(ghcr.io/dhslab/docker-nextflow)" "NXF_HOME=${PWD}/.nextflow ; nextflow run main.nf -profile test,ris,dhslab --outdir results"
-```
 ### **Directory tree for test run output (default workflow):**
 
 ```
