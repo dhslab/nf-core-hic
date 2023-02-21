@@ -11,7 +11,7 @@
 
 <!-- TODO nf-core: Write a 1-2 sentence summary of what data the pipeline is for and what it does -->
 
-**nf-core-hic** is a bioinformatics best-practice analysis pipeline for Hi-C/Capture-C data analysis. This pipeline is optimal for large scale analysis in High Performance Computing Clusters (HPCs) and Cloud Computing environments (eg. AWS)
+**nf-core-hic** is a bioinformatics best-practice analysis pipeline for Hi-C/Capture-C data analysis. This pipeline is optimal for large scale analysis in High Performance Computing Clusters (HPCs) and Cloud Computing environments (eg. AWS). It can be also ran in hybrid environments (eg. LSF/AWS hybrid run).
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible.
 
@@ -62,7 +62,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
    <!-- TODO nf-core: Update the example "typical command" below used to run the pipeline -->
 
    ```bash
-   nextflow run dhslab/nf-core-hic -r dev \
+   nextflow run dhslab/nf-core-hic -r dev -latest \
    -profile YOURPROFILE(S) \
    --input <SAMPLESHEET> \
    --fasta <FASTA> \
@@ -76,7 +76,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
    <!-- TODO nf-core: Update the example "typical command" below used to run the pipeline -->
 
    ```bash
-   nextflow run dhslab/nf-core-hic -r dev \
+   nextflow run dhslab/nf-core-hic -r dev -latest \
    -entry capture \
    -profile YOURPROFILE(S) \
    --input <SAMPLESHEET> \
@@ -91,7 +91,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
    <!-- TODO nf-core: Update the example "typical command" below used to run the pipeline -->
 
    ```bash
-   nextflow run dhslab/nf-core-hic -r dev \
+   nextflow run dhslab/nf-core-hic -r dev -latest \
    -entry qc
    -profile YOURPROFILE(S) \
    --input <SAMPLESHEET> \
@@ -101,7 +101,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
    --genome <GENOME_NAME> \
    --outdir <OUTDIR> 
    ```
-
+- any number of profiles/config-files can be used. Just consider how configuration priorities are set in nextflow as documented [here](https://www.nextflow.io/docs/latest/config.html)
 ## Usage
 ### Required parameters:
 1. **Input** `samplesheet.cvs` which provides directory paths for `fastq1`, `fastq2` raw reads and their metadata (`id`, `sample`, `library`, `flowcell`). this can be provided either in a configuration file or as `--input path/to/samplesheet.cvs` command line parameter. Example sheet located in `assets/samplesheet.csv`.
@@ -143,27 +143,6 @@ The following parameters are set to the shown default values, but should be modi
 |-----------|-----------|-----------|-----------|
 | `baits_bed` | Bed file for regions targeted  by Capture baits. Required only for Capture-C workflow | `string` | None |
 
-
-## Example for running a test on WashU RIS HPC:
-
-```bash
-# Run default Hi-C workflow
-NXF_HOME=/scratch1/fs1/dspencer/.nextflow \
-LSF_DOCKER_VOLUMES="/storage1/fs1/dspencer/Active:/storage1/fs1/dspencer/Active /scratch1/fs1/dspencer:/scratch1/fs1/dspencer $HOME:$HOME" \
-bsub -g /dspencer/nextflow -G compute-dspencer -q dspencer \
--e nextflow_launcher.err -o nextflow_launcher.log -We 2:00 -n 2 -M 12GB \
--R "select[mem>=16000] span[hosts=1] rusage[mem=16000]" \
--a "docker(ghcr.io/dhslab/docker-nextflow)" \
-nextflow run dhslab/nf-core-hic \
--r dev \
--profile dhslab,ris \
--c /storage1/fs1/dspencer/Active/spencerlab/mohamed/github/nf-core-hic/conf/test_dhs.config \
---outdir results
-```
-**Notice the profiles which are used here:**
-1. **`dhslab`** -> to set **lab-specific** cluster/cloud configuration (by importing `conf/dhslab.config`, see `nextflow.config`)
-2. **`ris`** -> to set **general** configuration for RIS LSF cluster
-- any number of profiles/config-files can be used. Just consider how configuration priorities are set in nextflow as documented [here](https://www.nextflow.io/docs/latest/config.html)
 
 ### **Directory tree for test run output (default workflow):**
 
