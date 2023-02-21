@@ -58,11 +58,48 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 
 
 4. Start running your own analysis!
-
+    1. Hi-C workflow (default)
    <!-- TODO nf-core: Update the example "typical command" below used to run the pipeline -->
 
    ```bash
-   nextflow run dhslab/nf-core-hic --input samplesheet.csv --fasta <FASTA> --bwa_index <INDEX_PREFIX> --chromsizes <CHROMSIZES> --genome <GENOME_NAME> -profile <docker/singularity/podman/shifter/charliecloud/conda/institute> --outdir <OUTDIR>
+   nextflow run dhslab/nf-core-hic -r dev \
+   -profile YOURPROFILE(S) \
+   --input <SAMPLESHEET> \
+   --fasta <FASTA> \
+   --bwa_index <INDEX_PREFIX> \
+   --chromsizes <CHROMSIZES> \
+   --genome <GENOME_NAME> \
+   --outdir <OUTDIR> 
+   ```
+
+    2. Capture-C workflow
+   <!-- TODO nf-core: Update the example "typical command" below used to run the pipeline -->
+
+   ```bash
+   nextflow run dhslab/nf-core-hic -r dev \
+   -entry capture \
+   -profile YOURPROFILE(S) \
+   --input <SAMPLESHEET> \
+   --fasta <FASTA> \
+   --bwa_index <INDEX_PREFIX> \
+   --chromsizes <CHROMSIZES> \
+   --genome <GENOME_NAME> \
+   --baits_bed <BAITS_BED> \
+   --outdir <OUTDIR>
+   ```
+    3. QC workflow
+   <!-- TODO nf-core: Update the example "typical command" below used to run the pipeline -->
+
+   ```bash
+   nextflow run dhslab/nf-core-hic -r dev \
+   -entry qc
+   -profile YOURPROFILE(S) \
+   --input <SAMPLESHEET> \
+   --fasta <FASTA> \
+   --bwa_index <INDEX_PREFIX> \
+   --chromsizes <CHROMSIZES> \
+   --genome <GENOME_NAME> \
+   --outdir <OUTDIR> 
    ```
 
 ## Usage
@@ -71,7 +108,8 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 2. **Genome fasta**, either in a configuration file or as `--fasta path/to/genome.fasta` command line parameter.
 3. **BWA index**, either in a configuration file or as `--bwa_index path/to/bwa_index/with_prefix` command line parameter. It is important to provide the full path including **index prefix**.
 4. **Chromosome sizes file**, either in a configuration file or as `--chromsizes path/to/chromsizes` command line parameter.
-2. **Genome name (eg. hg38)**, either in a configuration file or as `--fasta path/to/genome.fasta` command line parameter.
+5. **Genome name (eg. hg38)**, either in a configuration file or as `--fasta path/to/genome.fasta` command line parameter.
+6. **Capture-C Baits bed file (Only in Capture-C workflow)** either in a configuration file or as `--baits_bed path/to/baits_bed` command line parameter.
 
 ### Tools specific parameters:
 The following parameters are set to the shown default values, but should be modified when required in command line, or in user-provided config files:
@@ -180,5 +218,5 @@ LSF_DOCKER_VOLUMES="/storage1/fs1/dspencer/Active:/storage1/fs1/dspencer/Active 
 
 ### Notes:
 - The pipeline is developed and optimized to be run in WashU RIS (LSF) HPC, but could be deployed in any [`HPC environment supported by Nextflow`](https://www.nextflow.io/docs/latest/executor.html).
-- The pipeline does NOT support conda because some of the tools used are not available as conda packages.
-- The Test workflow can be run on personal computer, but not adviced. It is recommdned to do the testing in environment with at least 16 GB memory. If the test workflow failed (espacially at **fastq2pair** step ), try re-run mith more allocated resources. Such errors are likely becasue of broken pipes due to maxed-out memory. The pipeline is desinged mith many pipe steps to avoid making large intermediatre files.
+- The pipeline does NOT support conda.
+- The Test workflow can be run on personal computer, but is not advised. It is recommended to do the testing in environment with at least 16 GB memory. If the test workflow failed (especially at **fastq2pair** step ), try re-run with more allocated resources. Such errors are likely because of broken pipes due to maxed-out memory. The pipeline is designed with several pipe steps to avoid making large intermediate files.

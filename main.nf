@@ -67,6 +67,8 @@ workflow qc {
 }
 
 workflow capture {
+    // Check if bait bed parameter is provided and exists
+    if (params.baits_bed) { ch_baits_bed = file(params.baits_bed, checkIfExists: true) } else { exit 1, 'Baits Bed file is not specified!' }
     CAPTURE ()
 }
 
