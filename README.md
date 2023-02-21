@@ -104,7 +104,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 - any number of profiles/config-files can be used. Just consider how configuration priorities are set in nextflow as documented [here](https://www.nextflow.io/docs/latest/config.html)
 ## Usage
 ### Required parameters:
-1. **Input** `samplesheet.cvs` which provides directory paths for `fastq1`, `fastq2` raw reads and their metadata (`id`, `sample`, `library`, `flowcell`). this can be provided either in a configuration file or as `--input path/to/samplesheet.cvs` command line parameter. Example sheet located in `assets/samplesheet.csv`.
+1. **Input** `samplesheet.cvs` which provides paths for `fastq1`, `fastq2` raw reads and their metadata (`id`, `sample`, `library`, `flowcell`). this can be provided either in a configuration file or as `--input path/to/samplesheet.cvs` command line parameter. Example sheet located in `assets/samplesheet.csv`.
 2. **Genome fasta**, either in a configuration file or as `--fasta path/to/genome.fasta` command line parameter.
 3. **BWA index**, either in a configuration file or as `--bwa_index path/to/bwa_index/with_prefix` command line parameter. It is important to provide the full path including **index prefix**.
 4. **Chromosome sizes file**, either in a configuration file or as `--chromsizes path/to/chromsizes` command line parameter.
