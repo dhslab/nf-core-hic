@@ -92,7 +92,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 
    ```bash
    nextflow run dhslab/nf-core-hic -r dev -latest \
-   -entry qc
+   -entry qc \
    -profile YOURPROFILE(S) \
    --input <SAMPLESHEET> \
    --fasta <FASTA> \
