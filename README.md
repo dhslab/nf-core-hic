@@ -13,7 +13,7 @@
 
 **nf-core-hic** is a bioinformatics best-practice analysis pipeline for Hi-C/Capture-C data analysis. This pipeline is optimal for large scale analysis in High Performance Computing Clusters (HPCs) and Cloud Computing environments (eg. AWS). Also, it can be executed in hybrid environments (eg. LSF/AWS hybrid run).
 
-The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible.
+The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. This workflow is baes on [nf-core](https://nf-co.re/) template.
 
 <!-- TODO nf-core: Add full-sized test dataset and amend the paragraph below if applicable -->
 
