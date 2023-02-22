@@ -31,6 +31,8 @@ process fastq2pairs {
 
         INDEX=`find -L ./ -name "*.amb" | sed 's/.amb//'`
 
+        mkdir tmp
+
         fastp -q ${params.trim_qual} --json ${meta.library}.fastp.json --html ${meta.library}.fastp.html -i ${fastq1} -I ${fastq2} --stdout | \\
             bwa mem -p -t \$MAXTHREADS -5 -T0 -SP \$INDEX - | tee >(samtools view -bS -o ${meta.library}.bam) | \\
             pairtools parse --min-mapq ${params.parsemq} --walks-policy ${params.parse_walks_policy} --max-inter-align-gap ${params.parse_max_gap} --add-columns mapq --nproc-in 1 --nproc-out 1 -c ${chromsizes} | \\
