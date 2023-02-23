@@ -1,7 +1,6 @@
 process make_chicago {
     tag "$meta.sample"
     label 'process_medium'
-    label 'per_sample'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'ghcr.io/dhslab/docker-hic' :

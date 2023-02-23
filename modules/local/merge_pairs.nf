@@ -1,7 +1,6 @@
 process merge_pairs {
     tag "$meta.sample"
-    label 'process_high'
-    label 'per_sample'
+    label 'process_medium'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'ghcr.io/dhslab/docker-hic' :

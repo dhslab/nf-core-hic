@@ -1,7 +1,6 @@
 process capture_qc {
     tag "$meta.library"
     label 'process_medium'
-    label 'per_library'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'ghcr.io/dhslab/docker-hic' :
