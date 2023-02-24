@@ -19,7 +19,10 @@ process make_chicago {
         """
         if (( ${task.cpus} > 1 )); then MAXTHREADS=\$(( ${task.cpus} - 1 )) ; else MAXTHREADS=1 ; fi
 
+        mkdir tmp
+
         samtools view -@ 1 -T ${reference_fasta} -Shu -F 2048 ${cram} | samtools sort -n -T tmp/temp.bam --threads \$MAXTHREADS -o ${meta.sample}.chicago.bam -
+
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
             samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//')
