@@ -38,9 +38,9 @@ process fastq2pairs {
 
         pairtools dedup --max-mismatch ${params.max_mismatch} --mark-dups --output-stats ${meta.library}.dedup.stats.txt ${meta.library}.sorted.pairs.gz | \\
             pairtools split --nproc-in 1 --nproc-out 1 --output-pairs ${meta.library}.pairs.gz --output-sam - | \\
-            samtools view -bS -@ 1 | \\
-            samtools sort -@ \$MAXTHREADS --reference ${reference_fasta} --write-index -o ${meta.library}.pairs.cram##idx##${meta.library}.pairs.cram.crai
-
+            samtools view -bS -@ 1 -o tmp.pairs.bam &&
+            samtools sort -@ \$MAXTHREADS --reference ${reference_fasta} --write-index -o ${meta.library}.pairs.cram##idx##${meta.library}.pairs.cram.crai tmp.pairs.bam &&
+            rm tmp.pairs.bam
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
             fastp: \$(fastp --version 2>&1 | sed -e "s/fastp //g")
