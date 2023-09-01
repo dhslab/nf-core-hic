@@ -37,8 +37,9 @@ process fastq2pairs {
             pairtools sort --nproc 1 --tmpdir tmp -o ${meta.library}.sorted.pairs.gz &&
 
         pairtools dedup --max-mismatch ${params.max_mismatch} --mark-dups --output-stats ${meta.library}.dedup.stats.txt ${meta.library}.sorted.pairs.gz | \\
-            pairtools split --nproc-in 1 --nproc-out 1 --output-pairs ${meta.library}.pairs.gz --output-sam - | \\
-            samtools view -bS -@ 1 -o tmp.pairs.bam &&
+            pairtools split --nproc-in 2 --nproc-out 2 --output-pairs ${meta.library}.pairs.gz --output-sam - > tmp.pairs.sam &&
+            samtools view -bS -@ \$MAXTHREADS -o tmp.pairs.bam tmp.pairs.sam &&
+            rm tmp.pairs.sam &&
             samtools sort -@ \$MAXTHREADS --reference ${reference_fasta} --write-index -o ${meta.library}.pairs.cram##idx##${meta.library}.pairs.cram.crai tmp.pairs.bam &&
             rm tmp.pairs.bam
         cat <<-END_VERSIONS > versions.yml
